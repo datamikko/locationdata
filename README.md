@@ -1,110 +1,124 @@
-# Sanakartta — a what3words-inspired GPS data collection exercise
+# Paikkadata — a first data-collection exercise for an intro ML course
 
-A ready-to-run assignment for the first weeks of an introductory AI/ML course, built for
-online students working alone. Students collect their own GPS data with a phone, and the same
-30-minute walk yields **both a classification dataset and a regression dataset** — enough to
-train the two models beginners usually meet first: a decision tree and a linear regression.
+A single web page that lets a student collect their own machine learning training data with a
+phone, in about 20 minutes, without installing anything. The page has two modes, and the choice
+between them *is* the lesson:
 
-No installation, no app store, no API keys. The collector is a single HTML page.
+- **Luokittelu** (classification) — the target is a name
+- **Regressio** (regression) — the target is a number
 
-## The idea
+Everything else about the two datasets is deliberately identical, so the difference between the
+two kinds of supervised learning is the only thing left to notice.
 
-[what3words](https://what3words.com) divides the world into 3 × 3 m squares and gives each one a
-three-word name. The grid is decided in advance. This exercise turns that around: students name a
-handful of real places near their home, collect GPS points at each one, and let a **decision tree
-work out where one named area ends and the next begins**.
+**Live page:** https://datamikko.github.io/wordmap/
 
-Because a decision tree splitting on two coordinates can only draw axis-aligned rectangles, the
-trained model *is* a grid of named cells — a what3words grid, but learned from data. That makes it
-one of the clearest visual explanations of how a decision tree actually works.
+## Why this exercise
 
-Meanwhile the walks between places give a regression target: predict how long a walk takes from how
-far apart the endpoints are. The fitted slope is seconds per metre, and its reciprocal is the
-student's own walking speed — a coefficient they can sanity-check against reality.
+Beginners meet linear regression and decision trees before they have ever seen a dataset that
+isn't already cleaned, labelled and split for them. This page makes them produce one. Because
+they choose the places, walk the walk and watch the accuracy reading wobble, the noise in the data
+is something they can explain rather than something that just happens to be there.
 
-## Quick start
+The page uses the vocabulary explicitly, in Finnish and English, and marks every column with its
+role while the data is being collected: the last column is always the target, the rest are
+features.
 
-**For teachers.** Host `sanakartta.html` on any HTTPS URL — a course platform, GitHub Pages, or a
-published Claude Artifact. Geolocation requires a secure context, so a file opened straight from the
-phone's storage will *not* get a location fix. Test the page outdoors on a phone before handing out
-the link. Then share the collector link, `tehtava1_datankeruu.md`, and later the notebook.
+| English | Finnish (used in the UI) |
+|---|---|
+| feature | piirre |
+| target | kohde |
+| class / label | luokka |
+| observation / row | havainto |
+| training data | opetusdata |
+| test data | testidata |
 
-**For students.** Open the link outdoors, wait for the accuracy reading to drop below 20 m, record
-five named places and the walks between them, then export the CSV.
+## What the student collects
 
-**Running the notebook locally** instead of in Colab:
+**Classification mode.** Pick 3–4 spots 20–60 m apart — a mailbox, a bench, some steps, a bus
+stop. Name each one, stand still and record for ~20 seconds. GPS scatter means each place becomes
+a cloud of points rather than a dot, which is exactly what makes the task non-trivial.
 
-```bash
-pip install pandas scikit-learn matplotlib jupyter
-jupyter notebook sanakartta_analyysi.ipynb
+```
+x_m, y_m, tarkkuus_m, luokka
+34.2, 18.7, 9.0,      penkki
 ```
 
-The notebook falls back to `esimerkkidata_sanakartta.csv` when the Colab upload widget is
-unavailable, so it runs end to end without any collected data.
+A decision tree on `x_m` and `y_m` can only split on one axis at a time, so the model it learns is
+a grid of named rectangles — a picture the student can compare against their own mental map of the
+neighbourhood.
 
-## Data format
+**Regression mode.** Stand at a starting point, start recording, walk straight away from it for
+about three minutes.
 
-One row per GPS sample. Coordinates are metres relative to the session's first fix — the origin
-itself is never written to the file.
+```
+aika_s, tarkkuus_m, etaisyys_m
+120.0,  7.4,        158.3
+```
 
-| Column | Meaning |
-|---|---|
-| `aikaleima` | local timestamp, ISO 8601 |
-| `t_s` | seconds since the session started |
-| `tila` | `paikka` = standing at a named place, `matka` = walking |
-| `sarja` | recording-run id; each start/stop pair gets its own number |
-| `paikka` | the three-word name (empty on walking rows) |
-| `ymparisto` | `ulko` / `sisa` — outdoors or indoors |
-| `x_m`, `y_m` | east and north offset in metres from the session origin |
-| `tarkkuus_m` | the browser's own horizontal accuracy estimate |
-| `korkeus_m`, `nopeus_ms` | altitude and speed, when the device reports them |
-| `kuljettu_m` | cumulative distance within the current `sarja` |
-| `lahde` | `gps` or `demo` — flags simulated data |
-| `lat`, `lon` | *optional*, only when the privacy setting is switched off |
+A linear regression on `aika_s` gives a slope in metres per second — the student's own walking
+speed, a coefficient they can check against reality instead of taking on faith.
 
-Classification uses the `paikka` rows; regression uses the `matka` rows, from which the notebook
-builds point pairs (straight-line distance → elapsed time).
+Both datasets download as their own CSV: `luokittelu.csv` and `regressio.csv`.
 
-## The collector page
+## Analysing the data
 
-- Works in mobile Chrome and Safari; nothing to install.
-- Names places for you with a Finnish three-word generator.
-- Keeps points in `localStorage`, so a reload or an accidental back-swipe doesn't lose the walk.
-- Requests a screen wake lock while recording (browsers stop the GPS when the phone locks).
-- Exports CSV by download, by clipboard, or through the Artifact `downloads` capability when
-  published as an Artifact.
-- **Demo mode** generates a realistic dataset in the same schema, so students who can't go outside —
-  weather, mobility, safety, darkness — can still complete the assignment.
-- Sends nothing anywhere. All data stays in the browser until the student clears it.
+The CSVs are already in the shape scikit-learn expects: features first, target last. In Colab or
+any notebook:
 
-## Expected results
+```python
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LinearRegression
 
-With the example dataset (6 places, ~10 m GPS scatter, 25–60 m apart):
+# --- luokittelu ---
+d = pd.read_csv("luokittelu.csv")
+X, y = d[["x_m", "y_m"]], d["luokka"]
+X_op, X_te, y_op, y_te = train_test_split(X, y, test_size=0.3, random_state=42)
 
-- Decision tree, depth 3: 0.98 train / 0.89 test accuracy
-- Full-depth tree: 1.00 train / 0.91 test — visible overfitting, as intended
-- Indoor/outdoor from accuracy alone, depth 1: 0.94, threshold ≈ 25 m
-- Regression: `duration_s = 0.83 · distance_m + 0.2`, R² ≈ 0.81, implied pace 1.2 m/s
+puu = DecisionTreeClassifier(max_depth=3).fit(X_op, y_op)
+print(puu.score(X_op, y_op), puu.score(X_te, y_te))
 
-Real student data varies a lot more, which is the point.
+# --- regressio ---
+d = pd.read_csv("regressio.csv")
+X, y = d[["aika_s"]], d["etaisyys_m"]
+X_op, X_te, y_op, y_te = train_test_split(X, y, test_size=0.3, random_state=42)
+
+suora = LinearRegression().fit(X_op, y_op)
+print(f"{suora.coef_[0]:.2f} m/s", suora.score(X_te, y_te))
+```
+
+Good follow-up questions: how does `max_depth` change the gap between training and test accuracy;
+is the fitted walking speed believable; what does the regression intercept mean; why can't the
+place name be predicted with a regression.
+
+## Running it
+
+The page is one self-contained file. Serve `index.html` over HTTPS — GitHub Pages is enough.
+**Geolocation requires a secure context**, so a file opened straight from phone storage will never
+get a fix. Test it outdoors on a phone before handing the link to a group.
+
+Works in mobile Chrome and Safari. Rows are kept in `localStorage`, so a reload or an accidental
+back-swipe doesn't lose the session, and the page asks for a screen wake lock while recording
+because browsers stop the GPS when the phone locks.
+
+## Accessibility fallback
+
+**Lisää demodataa** generates a realistic dataset in the same schema for the mode currently
+selected. Students who can't go outside — weather, mobility, safety, darkness — can still complete
+the assignment, and the page flags demo rows so a teacher can see which submissions used it.
 
 ## Privacy
 
-Exports contain metres relative to the session origin, never latitude/longitude, and the origin is
-not stored — so a submitted file can't be traced back to where the student lives. The instructions
-tell students to name places with words rather than addresses and not to start at their front door.
-Keep the privacy toggle on; if a submission contains `lat`/`lon` columns, ask for a fresh export.
+Nothing is sent anywhere; all data stays in the browser. Exports contain metres and seconds
+relative to the student's own starting point, never latitude/longitude, and the starting point
+itself is never written to the file — so a submitted CSV cannot be traced back to where the
+student lives. Worth telling students anyway: name places with ordinary words rather than
+addresses, and don't start the walk at your own front door.
 
-## Adapting it
+## Files
 
-The material is course-agnostic apart from the language. Obvious variants:
-
-- **Pooled dataset.** Collect submitted CSVs, add a student column, and ask a follow-up question
-  about differences in walking pace between people.
-- **Travel mode classification.** Have students record walking, cycling and a bus ride separately,
-  then classify on `nopeus_ms` and `tarkkuus_m`. Considerably harder than place classification.
-- **k-NN comparison.** Plot a `KNeighborsClassifier` on the same map; the contrast with the tree's
-  rectangles makes the inductive bias of each model obvious.
-
-Edit `tee_esimerkkidata.py` — place positions, GPS scatter, walking speed — to make the example
-dataset easier or harder for the models.
+| File | Purpose |
+|---|---|
+| `index.html` | the whole tool — no build step, no dependencies beyond Google Fonts |
+| `README.md` | this file |
