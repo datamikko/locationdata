@@ -14,7 +14,7 @@ The interface is bilingual: a **FI / EN** switch in the top right changes every 
 and the choice is remembered. Column names stay in English in both languages, so the same analysis
 code works for the whole group.
 
-**Live page:** https://datamikko.github.io/wordmap/
+**Live page:** [https://datamikko.github.io/wordmap/](https://datamikko.github.io/locationdata/)
 
 ## Why this exercise
 
