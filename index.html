@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Sanakartta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#F1F4EF; --surface:#FFFFFF; --surface-2:#E7EBE4; --line:#D2D8CD;
+    --ink:#16201B; --muted:#5E6B63;
+    --accent:#C64A17; --accent-ink:#FFFFFF;
+    --ok:#146B4E; --warn:#8A6100; --bad:#A32418;
+    --shadow:0 1px 2px rgba(22,32,27,.08), 0 6px 18px rgba(22,32,27,.06);
+    --r:10px;
+    --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --cond:"Barlow Semi Condensed","IBM Plex Sans",-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#111511; --surface:#1A1F19; --surface-2:#232921; --line:#333B31;
+      --ink:#E7ECE4; --muted:#9CA99E;
+      --accent:#EE7440; --accent-ink:#1A0E07;
+      --ok:#5CBE93; --warn:#D9AE3B; --bad:#EF8175;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#111511; --surface:#1A1F19; --surface-2:#232921; --line:#333B31;
+    --ink:#E7ECE4; --muted:#9CA99E;
+    --accent:#EE7440; --accent-ink:#1A0E07;
+    --ok:#5CBE93; --warn:#D9AE3B; --bad:#EF8175;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.3);
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;
+       -webkit-text-size-adjust:100%;padding:0 0 48px}
+  .wrap{max-width:560px;margin:0 auto;padding:16px 16px 0;display:flex;flex-direction:column;gap:14px}
+
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-top:6px}
+  h1{font-family:var(--cond);font-size:30px;font-weight:700;letter-spacing:.01em;margin:0;line-height:1}
+  .sub{font-family:var(--cond);font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+  .panel h2{font-family:var(--cond);font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+            color:var(--muted);margin:0 0 10px}
+
+  /* readout bar */
+  .readout{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+           border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+  .cell{background:var(--surface);padding:10px 12px 11px;position:relative}
+  .cell .k{font-family:var(--cond);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .cell .v{font-family:var(--mono);font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.25;
+           white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cell .u{font-size:12px;font-weight:400;color:var(--muted)}
+  .cell::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent}
+  .cell.s-ok::before{background:var(--ok)} .cell.s-warn::before{background:var(--warn)} .cell.s-bad::before{background:var(--bad)}
+
+  label.fld{display:block;font-family:var(--cond);font-size:12px;font-weight:700;letter-spacing:.12em;
+            text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  input[type=text]{width:100%;font-family:var(--mono);font-size:17px;padding:12px;border-radius:8px;
+       border:1px solid var(--line);background:var(--surface-2);color:var(--ink)}
+  input[type=text]:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row>*{flex:1 1 0;min-width:0}
+
+  button{font-family:var(--sans);font-size:15px;font-weight:600;border-radius:8px;border:1px solid var(--line);
+         background:var(--surface-2);color:var(--ink);padding:12px 10px;cursor:pointer;min-height:48px}
+  button:active{transform:translateY(1px)}
+  button[disabled]{opacity:.45;cursor:not-allowed}
+  .big{min-height:64px;font-size:17px}
+  .rec{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+  .rec.alt{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+  .rec.on{background:var(--bad);color:#fff;border-color:transparent}
+  .ghost{background:transparent}
+  .small{font-size:13px;min-height:40px;padding:8px 10px;font-weight:500}
+
+  .seg{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;border:0;border-radius:0;background:var(--surface-2);min-height:44px;font-size:14px}
+  .seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:currentColor;margin-right:7px;vertical-align:1px}
+  .live .dot{animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  @media (prefers-reduced-motion:reduce){.live .dot{animation:none}}
+
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{font-family:var(--mono);font-size:12px;padding:5px 9px;border-radius:999px;background:var(--surface-2);
+       border:1px solid var(--line);white-space:nowrap}
+  .tag b{font-weight:600;color:var(--accent)}
+
+  .log{font-family:var(--mono);font-size:12px;line-height:1.7;max-height:150px;overflow:auto;
+       background:var(--surface-2);border-radius:8px;padding:8px 10px;color:var(--muted);white-space:pre;
+       -webkit-overflow-scrolling:touch}
+  .log b{color:var(--ink);font-weight:600}
+
+  details{border-top:1px solid var(--line);padding-top:10px}
+  summary{font-family:var(--cond);font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+          color:var(--muted);cursor:pointer;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ ";color:var(--accent)}
+  details[open] summary::before{content:"▾ "}
+  details .body{padding-top:10px;font-size:14px;color:var(--muted)}
+  details .body p{margin:0 0 8px}
+  details .body ol,details .body ul{margin:0 0 8px;padding-left:20px}
+  details .body li{margin-bottom:5px}
+  details .body strong{color:var(--ink)}
+
+  .chk{display:flex;align-items:flex-start;gap:9px;font-size:14px;color:var(--muted);margin-bottom:8px}
+  .chk input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent);flex:none}
+  .note{font-size:13px;color:var(--muted)}
+  .demo-badge{display:none;font-family:var(--cond);font-size:12px;font-weight:700;letter-spacing:.1em;
+       text-transform:uppercase;color:var(--warn);border:1px dashed var(--warn);border-radius:6px;padding:4px 8px}
+  .demo-badge.show{display:inline-block}
+  footer{max-width:560px;margin:18px auto 0;padding:0 16px;font-size:12px;color:var(--muted)}
+  textarea{width:100%;height:120px;font-family:var(--mono);font-size:11px;border:1px solid var(--line);
+     border-radius:8px;background:var(--surface-2);color:var(--ink);padding:8px;display:none}
+  textarea.show{display:block}
+</style>
+</head>
+<body style="margin:0">
+
+
+<div class="wrap">
+  <header>
+    <h1>Sanakartta</h1>
+    <span class="sub" id="badge">GPS-keruu</span>
+  </header>
+
+  <div class="readout">
+    <div class="cell" id="c-fix"><div class="k">Signaali</div><div class="v" id="v-fix">–</div></div>
+    <div class="cell" id="c-acc"><div class="k">Tarkkuus</div><div class="v" id="v-acc">– <span class="u">m</span></div></div>
+    <div class="cell"><div class="k">Pisteitä</div><div class="v" id="v-n">0</div></div>
+  </div>
+
+  <div class="panel">
+    <h2>1 · Paikan nimi</h2>
+    <label class="fld" for="place">Kolme sanaa, pisteillä erotettuna</label>
+    <input type="text" id="place" placeholder="esim. hidas.kuusi.portti" autocomplete="off" autocapitalize="none" spellcheck="false">
+    <div class="row" style="margin-top:8px">
+      <button class="small ghost" id="gen">Arvo nimi</button>
+      <button class="small ghost" id="clearname">Tyhjennä</button>
+    </div>
+    <div style="margin-top:12px">
+      <label class="fld">Ympäristö</label>
+      <div class="seg" role="group" aria-label="Ympäristö">
+        <button id="env-ulko" aria-pressed="true">Ulkona</button>
+        <button id="env-sisa" aria-pressed="false">Sisällä</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>2 · Tallennus</h2>
+    <div class="row">
+      <button class="big rec" id="b-place">Tallenna paikka</button>
+      <button class="big rec alt" id="b-walk">Tallenna kävely</button>
+    </div>
+    <p class="note" id="hint" style="margin:10px 0 0">Seiso paikallaan ja pidä tallennus päällä ~20 s. Kävely: paina käynnistä ennen lähtöä ja pysäytä perillä.</p>
+    <span class="demo-badge" id="demobadge">Demodataa mukana</span>
+  </div>
+
+  <div class="panel">
+    <h2>3 · Kertyneet paikat</h2>
+    <div class="tags" id="tags"><span class="note">Ei vielä pisteitä.</span></div>
+    <div class="log" id="log" style="margin-top:12px">odottaa ensimmäistä pistettä…</div>
+  </div>
+
+  <div class="panel">
+    <h2>4 · Vienti</h2>
+    <div class="row">
+      <button id="dl">Lataa CSV</button>
+      <button id="copy" class="ghost">Kopioi CSV</button>
+    </div>
+    <textarea id="ta" readonly aria-label="CSV-teksti"></textarea>
+    <div class="chk" style="margin-top:12px">
+      <input type="checkbox" id="priv" checked>
+      <label for="priv">Jätä tarkat koordinaatit pois (suositus). Tiedostoon tulee vain metrit suhteessa aloituspisteeseen, ei lat/lon.</label>
+    </div>
+    <div class="row">
+      <button class="small ghost" id="demo">Lisää demodataa</button>
+      <button class="small ghost" id="reset">Tyhjennä kaikki</button>
+    </div>
+  </div>
+
+  <details>
+    <summary>Näin keräät datan</summary>
+    <div class="body">
+      <ol>
+        <li>Avaa sivu <strong>puhelimen selaimessa ulkona</strong> ja salli sijainnin käyttö. Odota, että tarkkuus on alle 20 m.</li>
+        <li>Valitse 5–6 paikkaa, jotka ovat <strong>20–100 m päässä toisistaan</strong> (esim. postilaatikko, kaupan ovi, puistonpenkki).</li>
+        <li>Anna paikalle nimi, seiso paikallaan ja pidä <strong>Tallenna paikka</strong> päällä noin 20 sekuntia. Kävele muutama askel paikan ympärillä.</li>
+        <li>Ennen kuin lähdet seuraavaan paikkaan, käynnistä <strong>Tallenna kävely</strong> ja pysäytä se perillä. Kävele normaalia vauhtia.</li>
+        <li>Toista, kunnes kaikki paikat ja välit on kerätty. Tavoite: <strong>yli 100 paikkapistettä ja vähintään 4 kävelyä</strong>.</li>
+        <li>Lataa CSV ja siirrä se analyysimuistikirjaan.</li>
+      </ol>
+      <p><strong>Pidä näyttö auki</strong> tallennuksen aikana – selain lopettaa mittaamisen, jos puhelin menee lukkoon. Sivu muistaa pisteet, vaikka se ladattaisiin uudelleen.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Tiedoston sarakkeet</summary>
+    <div class="body">
+      <ul>
+        <li><strong>tila</strong> – <code>paikka</code> (seisot nimetyssä paikassa) tai <code>matka</code> (kävelet)</li>
+        <li><strong>sarja</strong> – juokseva numero jokaiselle tallennusjaksolle</li>
+        <li><strong>paikka</strong> – antamasi kolmen sanan nimi (tyhjä kävelyriveillä)</li>
+        <li><strong>ymparisto</strong> – ulko / sisa</li>
+        <li><strong>x_m, y_m</strong> – itä- ja pohjoissuunta metreinä istunnon aloituspisteestä</li>
+        <li><strong>tarkkuus_m</strong> – GPS:n oma virhearvio</li>
+        <li><strong>korkeus_m, nopeus_ms</strong> – laitteen ilmoittamat, voivat puuttua</li>
+        <li><strong>kuljettu_m</strong> – kertynyt matka sarjan alusta</li>
+        <li><strong>t_s</strong> – sekuntia istunnon alusta &nbsp;·&nbsp; <strong>lahde</strong> – gps / demo</li>
+      </ul>
+    </div>
+  </details>
+</div>
+
+<footer>Sanakartta kerää sijaintitietoa vain tähän selaimeen. Mitään ei lähetetä verkkoon, ja kaikki katoaa, kun painat Tyhjennä kaikki.</footer>
+
+<script>
+(function(){
+  "use strict";
+  var KEY="sanakartta_v2";
+  var W1=["hidas","sininen","kirkas","utuinen","paksu","kiljuva","kolea","raikas","laiska","tuhma","viisas","kylmä","pehmeä","kiiltävä","karhea","nuori","vinha","hurja","tyyni","vetinen"];
+  var W2=["kuusi","harakka","kivi","sammal","poro","aalto","hiekka","pilvi","kuura","lehmus","kettu","tuuli","jäkälä","lokki","koivu","routa","peippo","niitty","virta","hanki"];
+  var W3=["portti","polku","ranta","katos","mäki","silta","aita","kaivo","piha","kulma","laituri","tolppa","porras","luiska","kaista","penkki","oja","kumpu","kaari","risteys"];
+
+  var $=function(id){return document.getElementById(id)};
+  var st={pts:[],origin:null,t0:null,sarja:0,env:"ulko",mode:null,last:null,timer:null,watch:null,wake:null};
+
+  /* ---------- talletus ---------- */
+  function save(){try{localStorage.setItem(KEY,JSON.stringify({pts:st.pts,origin:st.origin,t0:st.t0,sarja:st.sarja}))}catch(e){}}
+  function load(){try{var r=localStorage.getItem(KEY);if(!r)return;var d=JSON.parse(r);
+    if(d&&d.pts){st.pts=d.pts;st.origin=d.origin;st.t0=d.t0;st.sarja=d.sarja||0}}catch(e){}}
+
+  /* ---------- apufunktiot ---------- */
+  function rnd(a){return a[Math.floor(Math.random()*a.length)]}
+  function words(){return rnd(W1)+"."+rnd(W2)+"."+rnd(W3)}
+  function xy(lat,lon){
+    var o=st.origin;
+    return [ (lon-o.lon)*111320*Math.cos(o.lat*Math.PI/180), (lat-o.lat)*110540 ];
+  }
+  function r1(v){return v==null||isNaN(v)?"":Math.round(v*10)/10}
+  function r2(v){return v==null||isNaN(v)?"":Math.round(v*100)/100}
+  function pad(n){return n<10?"0"+n:""+n}
+  function stamp(ms){var d=new Date(ms);
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes())+":"+pad(d.getSeconds());}
+
+  /* ---------- paikannus ---------- */
+  function startWatch(){
+    if(!navigator.geolocation){setFix("ei tukea","bad");return}
+    setFix("etsii…","warn");
+    st.watch=navigator.geolocation.watchPosition(function(p){
+      st.last=p;
+      if(!st.origin)st.origin={lat:p.coords.latitude,lon:p.coords.longitude};
+      if(!st.t0)st.t0=Date.now();
+      var a=p.coords.accuracy;
+      setFix("ok","ok");
+      $("v-acc").innerHTML=Math.round(a)+' <span class="u">m</span>';
+      $("c-acc").className="cell "+(a<=15?"s-ok":a<=35?"s-warn":"s-bad");
+    },function(err){
+      setFix(err.code===1?"estetty":"ei löydy","bad");
+    },{enableHighAccuracy:true,maximumAge:1000,timeout:20000});
+  }
+  function setFix(t,s){$("v-fix").textContent=t;$("c-fix").className="cell s-"+s}
+
+  /* ---------- pisteen tallennus ---------- */
+  function sample(){
+    var p=st.last;if(!p||!st.origin)return;
+    var c=p.coords, q=xy(c.latitude,c.longitude);
+    var cum=0, prev=null;
+    for(var i=st.pts.length-1;i>=0;i--){if(st.pts[i].sa===st.sarja){prev=st.pts[i];break}}
+    if(prev){var dx=q[0]-prev.x,dy=q[1]-prev.y;cum=prev.cum+Math.sqrt(dx*dx+dy*dy)}
+    st.pts.push({ms:Date.now(),tila:st.mode,sa:st.sarja,
+      paikka:st.mode==="paikka"?$("place").value.trim():"",
+      env:st.env,x:q[0],y:q[1],acc:c.accuracy,alt:c.altitude,spd:c.speed,cum:cum,src:"gps",
+      lat:c.latitude,lon:c.longitude});
+    save();render();
+  }
+
+  function toggle(mode,btn){
+    if(st.mode===mode){stop();return}
+    if(st.mode)stop();
+    if(mode==="paikka"&&!$("place").value.trim()){$("place").focus();flash("Anna ensin paikan nimi.");return}
+    if(!st.last){flash("Odota, että signaali löytyy.");return}
+    st.mode=mode;st.sarja++;
+    btn.classList.add("on","live");
+    btn.innerHTML='<span class="dot"></span>Pysäytä';
+    document.body.classList.add("recording");
+    st.timer=setInterval(sample,mode==="paikka"?1000:2000);
+    sample();
+    if(navigator.wakeLock&&navigator.wakeLock.request){
+      navigator.wakeLock.request("screen").then(function(w){st.wake=w}).catch(function(){});
+    }
+  }
+  function stop(){
+    if(st.timer){clearInterval(st.timer);st.timer=null}
+    st.mode=null;
+    ["b-place","b-walk"].forEach(function(id){var b=$(id);b.classList.remove("on","live");});
+    $("b-place").textContent="Tallenna paikka";$("b-walk").textContent="Tallenna kävely";
+    if(st.wake){try{st.wake.release()}catch(e){}st.wake=null}
+  }
+  function flash(msg){var h=$("hint");var old=h.textContent;h.textContent=msg;h.style.color="var(--bad)";
+    setTimeout(function(){h.textContent=old;h.style.color=""},2600)}
+
+  /* ---------- näkymä ---------- */
+  function render(){
+    $("v-n").textContent=st.pts.length;
+    var counts={},walks=0,seen={};
+    st.pts.forEach(function(p){
+      if(p.tila==="paikka"&&p.paikka){counts[p.paikka]=(counts[p.paikka]||0)+1}
+      if(p.tila==="matka"&&!seen[p.sa]){seen[p.sa]=1;walks++}
+    });
+    var keys=Object.keys(counts),t=$("tags");
+    t.innerHTML="";
+    if(!keys.length&&!walks){t.innerHTML='<span class="note">Ei vielä pisteitä.</span>'}
+    keys.forEach(function(k){var s=document.createElement("span");s.className="tag";
+      s.innerHTML=k+" <b>"+counts[k]+"</b>";t.appendChild(s)});
+    if(walks){var s=document.createElement("span");s.className="tag";s.innerHTML="kävelyt <b>"+walks+"</b>";t.appendChild(s)}
+    var tail=st.pts.slice(-8).map(function(p){
+      var nimi=(p.paikka||"").length>11?(p.paikka.slice(0,10)+"…"):(p.paikka||"kävely");
+      return stamp(p.ms).slice(14)+" "+(p.tila==="paikka"?"P":"K")+" x"+String(Math.round(p.x)).padStart(4)+" y"+String(Math.round(p.y)).padStart(4)+" ±"+String(Math.round(p.acc)).padStart(2)+"m "+nimi;
+    }).join("\n");
+    $("log").textContent=tail||"odottaa ensimmäistä pistettä…";
+    $("log").scrollTop=1e6;
+    $("demobadge").className="demo-badge"+(st.pts.some(function(p){return p.src==="demo"})?" show":"");
+  }
+
+  /* ---------- CSV ---------- */
+  function csv(){
+    var priv=$("priv").checked;
+    var head=["aikaleima","t_s","tila","sarja","paikka","ymparisto","x_m","y_m","tarkkuus_m","korkeus_m","nopeus_ms","kuljettu_m","lahde"];
+    if(!priv)head=head.concat(["lat","lon"]);
+    var t0=st.t0||(st.pts[0]&&st.pts[0].ms)||Date.now();
+    var rows=st.pts.map(function(p){
+      var r=[stamp(p.ms),r1((p.ms-t0)/1000),p.tila,p.sa,p.paikka,p.env,r1(p.x),r1(p.y),r1(p.acc),r1(p.alt),r2(p.spd),r1(p.cum),p.src];
+      if(!priv)r=r.concat([p.lat==null?"":p.lat.toFixed(6),p.lon==null?"":p.lon.toFixed(6)]);
+      return r.join(",");
+    });
+    return head.join(",")+"\n"+rows.join("\n")+"\n";
+  }
+  function fname(){return "sanakartta_"+stamp(Date.now()).replace(/[-:T]/g,"").slice(0,13)+".csv"}
+
+  /* ---------- demodata ---------- */
+  function demo(){
+    if(!st.origin)st.origin={lat:66.5,lon:25.72};
+    if(!st.t0)st.t0=Date.now();
+    var t=Date.now(), names=[],i,j;
+    for(i=0;i<5;i++)names.push(words());
+    var pos=[[0,0],[62,18],[95,-70],[10,-95],[-55,-30]];
+    for(i=0;i<5;i++){
+      st.sarja++;
+      var jitter=6+Math.random()*4;
+      for(j=0;j<26;j++){
+        var acc=6+Math.random()*14;
+        st.pts.push({ms:t,tila:"paikka",sa:st.sarja,paikka:names[i],env:"ulko",
+          x:pos[i][0]+(Math.random()-.5)*jitter, y:pos[i][1]+(Math.random()-.5)*jitter,
+          acc:acc,alt:120+Math.random()*3,spd:Math.random()*0.4,cum:0,src:"demo",lat:null,lon:null});
+        t+=1000;
+      }
+      if(i<4){
+        st.sarja++;
+        var a=pos[i],b=pos[i+1];
+        var d=Math.sqrt(Math.pow(b[0]-a[0],2)+Math.pow(b[1]-a[1],2))*(1.15+Math.random()*0.25);
+        var v=1.15+Math.random()*0.45, steps=Math.max(4,Math.round(d/v/2)), cum=0;
+        for(j=1;j<=steps;j++){
+          var f=j/steps, seg=d/steps*(0.85+Math.random()*0.3);cum+=seg;
+          st.pts.push({ms:t,tila:"matka",sa:st.sarja,paikka:"",env:"ulko",
+            x:a[0]+(b[0]-a[0])*f+(Math.random()-.5)*7, y:a[1]+(b[1]-a[1])*f+(Math.random()-.5)*7,
+            acc:5+Math.random()*12,alt:120+Math.random()*4,spd:v+(Math.random()-.5)*.3,cum:cum,src:"demo",lat:null,lon:null});
+          t+=2000;
+        }
+        t+=8000;
+      }
+    }
+    save();render();
+  }
+
+  /* ---------- tapahtumat ---------- */
+  $("gen").onclick=function(){$("place").value=words()};
+  $("clearname").onclick=function(){$("place").value="";$("place").focus()};
+  $("env-ulko").onclick=function(){st.env="ulko";this.setAttribute("aria-pressed","true");$("env-sisa").setAttribute("aria-pressed","false")};
+  $("env-sisa").onclick=function(){st.env="sisa";this.setAttribute("aria-pressed","true");$("env-ulko").setAttribute("aria-pressed","false")};
+  $("b-place").onclick=function(){toggle("paikka",this)};
+  $("b-walk").onclick=function(){toggle("matka",this)};
+  $("demo").onclick=function(){demo()};
+  $("reset").onclick=function(){if(confirm("Poistetaanko kaikki kerätyt pisteet?")){stop();st.pts=[];st.sarja=0;st.origin=null;st.t0=null;save();render();$("ta").className=""}};
+  function suoraLataus(txt){
+    var blob=new Blob([txt],{type:"text/csv;charset=utf-8"});
+    var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname();
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+  }
+  $("dl").onclick=function(){
+    if(!st.pts.length){flash("Ei vielä dataa vietäväksi.");return}
+    var txt=csv();
+    if(window.claude&&typeof window.claude.use==="function"){
+      window.claude.use("downloads").then(function(ns){
+        if(!ns){suoraLataus(txt);return}
+        return ns.save({filename:fname(),data:txt}).catch(function(e){
+          if(e&&e.code==="declined")flash("Lataus peruttu.");
+          else flash("Lataus ei onnistunut – käytä Kopioi CSV.");
+        });
+      },function(){suoraLataus(txt)});
+    }else{suoraLataus(txt)}
+  };
+  $("copy").onclick=function(){
+    if(!st.pts.length){flash("Ei vielä dataa vietäväksi.");return}
+    var txt=csv(),ta=$("ta");ta.value=txt;ta.className="show";
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(function(){flash("CSV kopioitu leikepöydälle.")},function(){flash("Kopioi teksti alta käsin.")});
+    }else{ta.select();flash("Kopioi teksti alta käsin.")}
+  };
+  window.addEventListener("beforeunload",function(){if(st.mode)save()});
+  document.addEventListener("visibilitychange",function(){
+    if(!document.hidden&&st.wake===null&&st.mode&&navigator.wakeLock&&navigator.wakeLock.request){
+      navigator.wakeLock.request("screen").then(function(w){st.wake=w}).catch(function(){});
+    }
+  });
+
+  load();render();startWatch();
+  if(!st.pts.length)$("hint").textContent="Salli sijainnin käyttö, odota tarkkuutta alle 20 m ja aloita ensimmäisestä paikasta.";
+})();
+</script>
+
+</body>
+</html>
