@@ -4,26 +4,29 @@ A single web page that lets a student collect their own machine learning trainin
 phone, in about 20 minutes, without installing anything. The page has two modes, and the choice
 between them *is* the lesson:
 
-- **Luokittelu** (classification) — the target is a name
-- **Regressio** (regression) — the target is a number
+- **Classification / Luokittelu** — the target is a name
+- **Regression / Regressio** — the target is a number
 
 Everything else about the two datasets is deliberately identical, so the difference between the
 two kinds of supervised learning is the only thing left to notice.
+
+The interface is bilingual: a **FI / EN** switch in the top right changes every label on the page,
+and the choice is remembered. Column names stay in English in both languages, so the same analysis
+code works for the whole group.
 
 **Live page:** https://datamikko.github.io/wordmap/
 
 ## Why this exercise
 
 Beginners meet linear regression and decision trees before they have ever seen a dataset that
-isn't already cleaned, labelled and split for them. This page makes them produce one. Because
-they choose the places, walk the walk and watch the accuracy reading wobble, the noise in the data
-is something they can explain rather than something that just happens to be there.
+isn't already cleaned, labelled and split for them. This page makes them produce one. Because they
+choose the places, walk the walk and watch the accuracy reading wobble, the noise in the data is
+something they can explain rather than something that just happens to be there.
 
-The page uses the vocabulary explicitly, in Finnish and English, and marks every column with its
-role while the data is being collected: the last column is always the target, the rest are
-features.
+The page uses the vocabulary explicitly and marks every column with its role while the data is
+being collected: the last column is always the target, the rest are features.
 
-| English | Finnish (used in the UI) |
+| English | Finnish |
 |---|---|
 | feature | piirre |
 | target | kohde |
@@ -39,8 +42,8 @@ stop. Name each one, stand still and record for ~20 seconds. GPS scatter means e
 a cloud of points rather than a dot, which is exactly what makes the task non-trivial.
 
 ```
-x_m, y_m, tarkkuus_m, luokka
-34.2, 18.7, 9.0,      penkki
+x_m,  y_m,  accuracy_m, altitude_m, label
+34.2, 18.7, 9.0,        112.4,      bench
 ```
 
 A decision tree on `x_m` and `y_m` can only split on one axis at a time, so the model it learns is
@@ -51,14 +54,23 @@ neighbourhood.
 about three minutes.
 
 ```
-aika_s, tarkkuus_m, etaisyys_m
-120.0,  7.4,        158.3
+time_s, accuracy_m, altitude_m, distance_m
+120.0,  7.4,        113.0,      158.3
 ```
 
-A linear regression on `aika_s` gives a slope in metres per second — the student's own walking
+A linear regression on `time_s` gives a slope in metres per second — the student's own walking
 speed, a coefficient they can check against reality instead of taking on faith.
 
-Both datasets download as their own CSV: `luokittelu.csv` and `regressio.csv`.
+Both datasets download as their own CSV: `classification.csv` and `regression.csv`.
+
+### About `altitude_m`
+
+Altitude is included because it costs nothing to collect and is easy to drop. It is also the most
+honest column in the file: many phones report no altitude at all, so the cell is simply empty, and
+GPS altitude is far less accurate than horizontal position even when it is reported. That gives a
+class three things to talk about that a tidy teaching dataset never does — missing values, a
+feature that carries almost no signal, and the difference between "collected" and "useful". If it
+just gets in the way, leave the column out of `X` and move on.
 
 ## Analysing the data
 
@@ -71,26 +83,27 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LinearRegression
 
-# --- luokittelu ---
-d = pd.read_csv("luokittelu.csv")
-X, y = d[["x_m", "y_m"]], d["luokka"]
-X_op, X_te, y_op, y_te = train_test_split(X, y, test_size=0.3, random_state=42)
+# --- classification ---
+d = pd.read_csv("classification.csv")
+X, y = d[["x_m", "y_m"]], d["label"]
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, random_state=42)
 
-puu = DecisionTreeClassifier(max_depth=3).fit(X_op, y_op)
-print(puu.score(X_op, y_op), puu.score(X_te, y_te))
+tree = DecisionTreeClassifier(max_depth=3).fit(X_tr, y_tr)
+print(tree.score(X_tr, y_tr), tree.score(X_te, y_te))
 
-# --- regressio ---
-d = pd.read_csv("regressio.csv")
-X, y = d[["aika_s"]], d["etaisyys_m"]
-X_op, X_te, y_op, y_te = train_test_split(X, y, test_size=0.3, random_state=42)
+# --- regression ---
+d = pd.read_csv("regression.csv")
+X, y = d[["time_s"]], d["distance_m"]
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, random_state=42)
 
-suora = LinearRegression().fit(X_op, y_op)
-print(f"{suora.coef_[0]:.2f} m/s", suora.score(X_te, y_te))
+line = LinearRegression().fit(X_tr, y_tr)
+print(f"{line.coef_[0]:.2f} m/s", line.score(X_te, y_te))
 ```
 
 Good follow-up questions: how does `max_depth` change the gap between training and test accuracy;
-is the fitted walking speed believable; what does the regression intercept mean; why can't the
-place name be predicted with a regression.
+is the fitted walking speed believable; what does the regression intercept mean; does adding
+`accuracy_m` or `altitude_m` to `X` help at all; why can't the place name be predicted with a
+regression.
 
 ## Running it
 
@@ -104,17 +117,19 @@ because browsers stop the GPS when the phone locks.
 
 ## Accessibility fallback
 
-**Lisää demodataa** generates a realistic dataset in the same schema for the mode currently
-selected. Students who can't go outside — weather, mobility, safety, darkness — can still complete
-the assignment, and the page flags demo rows so a teacher can see which submissions used it.
+**Add demo data / Lisää demodataa** generates a realistic dataset in the same schema for the mode
+currently selected. Students who can't go outside — weather, mobility, safety, darkness — can still
+complete the assignment, and the page flags demo rows so a teacher can see which submissions used
+it.
 
 ## Privacy
 
 Nothing is sent anywhere; all data stays in the browser. Exports contain metres and seconds
 relative to the student's own starting point, never latitude/longitude, and the starting point
-itself is never written to the file — so a submitted CSV cannot be traced back to where the
-student lives. Worth telling students anyway: name places with ordinary words rather than
-addresses, and don't start the walk at your own front door.
+itself is never written to the file — so a submitted CSV cannot be traced back to where the student
+lives. Altitude is the one absolute value in the file; it is metres above sea level, which narrows
+a location down about as much as knowing the town does. Worth telling students anyway: name places
+with ordinary words rather than addresses, and don't start the walk at your own front door.
 
 ## Files
 
