@@ -42,9 +42,14 @@
        line-height:1.5;-webkit-text-size-adjust:100%;padding-bottom:48px}
   .wrap{max-width:560px;margin:0 auto;padding:16px 16px 0;display:flex;flex-direction:column;gap:14px}
 
-  header{padding-top:6px}
+  header{padding-top:6px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
   h1{font-family:var(--cond);font-size:32px;font-weight:700;margin:0;line-height:1}
-  header p{margin:4px 0 0;font-size:14px;color:var(--muted)}
+  header p{margin:4px 0 0;font-size:14px;color:var(--muted);max-width:38ch}
+
+  .lang{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
+  .lang button{font-family:var(--cond);font-size:13px;font-weight:700;letter-spacing:.08em;
+       min-height:34px;padding:0 11px;border:0;border-radius:0;background:var(--surface);color:var(--muted)}
+  .lang button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
 
   .readout{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
            border:1px solid var(--line);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
@@ -71,9 +76,8 @@
   .panel h2{font-family:var(--cond);font-size:12px;font-weight:700;letter-spacing:.14em;
             text-transform:uppercase;color:var(--muted);margin:0 0 8px}
   .panel p{margin:0 0 12px;font-size:14px;color:var(--muted)}
-  .panel p:last-child{margin-bottom:0}
 
-  .rooli{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;font-family:var(--mono);font-size:12px}
+  .rooli{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px;font-family:var(--mono);font-size:12px}
   .rooli span{border:1px solid var(--line);border-radius:6px;padding:4px 8px;background:var(--surface-2)}
   .rooli span.p{border-left:3px solid var(--accent)}
   .rooli span.k{border-left:3px solid var(--target)}
@@ -115,10 +119,10 @@
   .warnbox.show{display:block}
 
   .tablewrap{overflow-x:auto;margin-top:12px;border:1px solid var(--line);border-radius:8px}
-  table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12px;
+  table{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:11px;
         font-variant-numeric:tabular-nums}
-  th,td{padding:6px 10px;text-align:right;white-space:nowrap}
-  th{background:var(--surface-2);font-weight:600;border-bottom:1px solid var(--line);text-align:right}
+  th,td{padding:6px 7px;text-align:right;white-space:nowrap}
+  th{background:var(--surface-2);font-weight:600;border-bottom:1px solid var(--line)}
   th small{display:block;font-family:var(--cond);font-size:10px;font-weight:600;letter-spacing:.1em;
            text-transform:uppercase;color:var(--muted)}
   th.kohde{color:var(--target)} th.kohde small{color:var(--target)}
@@ -126,6 +130,7 @@
   tr:last-child td{border-bottom:0}
   td.kohde{color:var(--ink);font-weight:500}
   td.txt,th.txt{text-align:left}
+  td.tyhja{color:var(--warn)}
   .empty{padding:14px;font-size:13px;color:var(--muted);text-align:center}
 
   textarea{width:100%;height:110px;font-family:var(--mono);font-size:11px;border:1px solid var(--line);
@@ -143,6 +148,7 @@
   details .body ol{margin:0 0 8px;padding-left:20px}
   details .body li{margin-bottom:6px}
   details .body strong{color:var(--ink)}
+  details .body code{font-family:var(--mono);font-size:13px;color:var(--ink)}
   footer{max-width:560px;margin:18px auto 0;padding:0 16px;font-size:12px;color:var(--muted)}
   [hidden]{display:none!important}
 </style>
@@ -151,186 +157,256 @@
 
 <div class="wrap">
   <header>
-    <h1>Paikkadata</h1>
-    <p>Kerää puhelimellasi harjoitusaineisto koneoppimista varten. Valitse, kumpaa lajia keräät.</p>
+    <div>
+      <h1>Paikkadata</h1>
+      <p data-t="sub"></p>
+    </div>
+    <div class="lang" role="group" aria-label="Kieli / Language">
+      <button id="fi" aria-pressed="true">FI</button>
+      <button id="en" aria-pressed="false">EN</button>
+    </div>
   </header>
 
   <div class="readout">
-    <div class="cell" id="c-fix"><div class="k">Signaali</div><div class="v" id="v-fix">–</div></div>
-    <div class="cell" id="c-acc"><div class="k">Tarkkuus</div><div class="v" id="v-acc">– <span class="u">m</span></div></div>
-    <div class="cell"><div class="k">Havaintoja</div><div class="v" id="v-n">0</div></div>
+    <div class="cell" id="c-fix"><div class="k" data-t="signal"></div><div class="v" id="v-fix">–</div></div>
+    <div class="cell" id="c-acc"><div class="k" data-t="acc"></div><div class="v" id="v-acc">– <span class="u">m</span></div></div>
+    <div class="cell"><div class="k" data-t="rows"></div><div class="v" id="v-n">0</div></div>
   </div>
 
   <div class="tabs" role="tablist">
     <button class="tab" id="tab-luok" role="tab" aria-selected="true" aria-controls="p-luok">
-      <span class="t">Luokittelu</span><span class="d">kohde on nimi</span></button>
+      <span class="t" data-t="clsTab"></span><span class="d" data-t="clsTabSub"></span></button>
     <button class="tab" id="tab-regr" role="tab" aria-selected="false" aria-controls="p-regr">
-      <span class="t">Regressio</span><span class="d">kohde on luku</span></button>
+      <span class="t" data-t="regTab"></span><span class="d" data-t="regTabSub"></span></button>
   </div>
 
-  <!-- LUOKITTELU -->
   <div class="panel" id="p-luok" role="tabpanel" aria-labelledby="tab-luok">
-    <h2>Luokittelu · kerää nimettyjä paikkoja</h2>
-    <p>Valitse 3–4 paikkaa 20–60 metrin päässä toisistaan. Anna paikalle nimi, seiso paikallaan ja
-      pidä tallennus päällä noin 20 sekuntia. Toista jokaisessa paikassa.</p>
-    <div class="rooli">
-      <span class="p">x_m <em>piirre</em></span>
-      <span class="p">y_m <em>piirre</em></span>
-      <span class="p">tarkkuus_m <em>piirre</em></span>
-      <span class="k">luokka <em>kohde</em></span>
-    </div>
-    <label class="fld" for="luokka">Paikan nimi eli luokka</label>
-    <input type="text" id="luokka" placeholder="esim. postilaatikko" autocomplete="off" autocapitalize="none" spellcheck="false">
-    <button class="big rec" id="b-luok">Tallenna paikka</button>
-    <p class="note" id="hint-luok">Odota, että tarkkuus on alle 20 m.</p>
+    <h2 data-t="clsHead"></h2>
+    <p data-t="clsBody"></p>
+    <div class="rooli" id="rooli-luok"></div>
+    <label class="fld" for="luokka" data-t="clsField"></label>
+    <input type="text" id="luokka" data-tp="clsPlaceholder" autocomplete="off" autocapitalize="none" spellcheck="false">
+    <button class="big rec" id="b-luok"></button>
+    <p class="note" id="hint-luok" data-t="clsHint"></p>
     <div class="tags" id="tags"></div>
   </div>
 
-  <!-- REGRESSIO -->
   <div class="panel" id="p-regr" role="tabpanel" aria-labelledby="tab-regr" hidden>
-    <h2>Regressio · kerää kävely</h2>
-    <p>Seiso siinä, mistä aloitat. Käynnistä tallennus, kävele suoraan poispäin noin kolme minuuttia
-      ja pysäytä. Lähtöpiste asetetaan siihen kohtaan, jossa painat käynnistystä.</p>
-    <div class="rooli">
-      <span class="p">aika_s <em>piirre</em></span>
-      <span class="p">tarkkuus_m <em>piirre</em></span>
-      <span class="k">etaisyys_m <em>kohde</em></span>
-    </div>
+    <h2 data-t="regHead"></h2>
+    <p data-t="regBody"></p>
+    <div class="rooli" id="rooli-regr"></div>
     <div class="readout" style="margin-top:2px">
-      <div class="cell"><div class="k">Aika</div><div class="v" id="v-aika">0 <span class="u">s</span></div></div>
-      <div class="cell"><div class="k">Etäisyys</div><div class="v" id="v-et">0 <span class="u">m</span></div></div>
-      <div class="cell"><div class="k">Rivejä</div><div class="v" id="v-nr">0</div></div>
+      <div class="cell"><div class="k" data-t="time"></div><div class="v" id="v-aika">0 <span class="u">s</span></div></div>
+      <div class="cell"><div class="k" data-t="dist"></div><div class="v" id="v-et">0 <span class="u">m</span></div></div>
+      <div class="cell"><div class="k" data-t="rows"></div><div class="v" id="v-nr">0</div></div>
     </div>
-    <button class="big rec" id="b-regr">Aloita kävely</button>
-    <p class="note" id="hint-regr">Kävele tasaista vauhtia äläkä pysähdy matkalla.</p>
+    <button class="big rec" id="b-regr"></button>
+    <p class="note" id="hint-regr" data-t="regHint"></p>
   </div>
 
   <div class="panel">
-    <h2>Kerätty data</h2>
+    <h2 data-t="dataHead"></h2>
     <div class="tablewrap" id="preview"></div>
     <div class="row" style="margin-top:12px">
-      <button id="dl">Lataa CSV</button>
-      <button id="copy" class="ghost">Kopioi CSV</button>
+      <button id="dl" data-t="download"></button>
+      <button id="copy" class="ghost" data-t="copy"></button>
     </div>
-    <textarea id="ta" readonly aria-label="CSV-teksti"></textarea>
+    <textarea id="ta" readonly aria-label="CSV"></textarea>
     <div class="row" style="margin-top:10px">
-      <button class="small ghost" id="demo">Lisää demodataa</button>
-      <button class="small ghost" id="reset">Tyhjennä tämä laji</button>
+      <button class="small ghost" id="demo" data-t="demo"></button>
+      <button class="small ghost" id="reset" data-t="clear"></button>
     </div>
-    <div class="warnbox" id="demobadge">Mukana on demodataa. Mainitse se palautuksessa.</div>
+    <div class="warnbox" id="demobadge" data-t="demoWarn"></div>
   </div>
 
   <details>
-    <summary>Mitä piirre ja kohde tarkoittavat</summary>
-    <div class="body">
-      <p>Koneoppimisen aineisto on taulukko. Yksi rivi on yksi <strong>havainto</strong>: yksi mittaus,
-        jonka puhelin teki.</p>
-      <p><strong>Piirteet</strong> (features) ovat sarakkeet, jotka malli saa nähdä. Ne ovat mallin
-        syöte.</p>
-      <p><strong>Kohde</strong> (target) on se yksi sarake, jonka malli yrittää ennustaa piirteiden
-        perusteella. Tässä työkalussa kohde on aina <strong>viimeinen sarake</strong>.</p>
-      <p>Jos kohde on nimi, tehtävä on <strong>luokittelu</strong>. Jos kohde on luku, tehtävä on
-        <strong>regressio</strong>. Se on koko ero.</p>
-    </div>
+    <summary data-t="sum1"></summary>
+    <div class="body" id="body1"></div>
   </details>
 
   <details>
-    <summary>Vinkkejä keruuseen</summary>
-    <div class="body">
-      <ol>
-        <li>Kerää ulkona. Sisällä GPS heittää helposti yli 30 metriä.</li>
-        <li><strong>Pidä näyttö auki</strong> tallennuksen aikana. Lukossa oleva puhelin lopettaa
-          mittaamisen.</li>
-        <li>Älä katso puhelinta kävellessäsi. Sivu tallentaa itsekseen.</li>
-        <li>Voit kerätä molemmat lajit samalla lenkillä. Ne tallentuvat erikseen ja ladataan
-          omina tiedostoinaan.</li>
-        <li>Sivu muistaa keräämäsi rivit, vaikka se ladattaisiin uudelleen.</li>
-      </ol>
-      <p>Jos et pääse ulos, paina <strong>Lisää demodataa</strong>. Se tuottaa saman muotoisen
-        aineiston, jolla tehtävän voi tehdä loppuun.</p>
-    </div>
+    <summary data-t="sum2"></summary>
+    <div class="body" id="body2"></div>
   </details>
 </div>
 
-<footer>Sivu ei lähetä mitään verkkoon. Tiedostoihin tulee vain metrejä ja sekunteja suhteessa
-omaan lähtöpisteeseesi – ei koordinaatteja. Data katoaa, kun tyhjennät sen.</footer>
+<footer data-t="footer"></footer>
 
 <script>
 (function(){
   "use strict";
-  var KEY="paikkadata_v1";
+  var KEY="paikkadata_v2", LKEY="paikkadata_lang";
   var $=function(id){return document.getElementById(id)};
 
+  /* ================= kielet / languages ================= */
+  var T={
+   fi:{
+    sub:"Kerää puhelimellasi harjoitusaineisto koneoppimista varten. Valitse, kumpaa lajia keräät.",
+    signal:"Signaali", acc:"Tarkkuus", rows:"Havaintoja", time:"Aika", dist:"Etäisyys",
+    fixSearch:"etsii…", fixOk:"ok", fixBlocked:"estetty", fixNone:"ei löydy", fixNoSupport:"ei tukea",
+    feature:"piirre", target:"kohde",
+    clsTab:"Luokittelu", clsTabSub:"kohde on nimi",
+    regTab:"Regressio", regTabSub:"kohde on luku",
+    clsHead:"Luokittelu · kerää nimettyjä paikkoja",
+    clsBody:"Valitse 3–4 paikkaa 20–60 metrin päässä toisistaan. Anna paikalle nimi, seiso paikallaan ja pidä tallennus päällä noin 20 sekuntia. Toista jokaisessa paikassa.",
+    clsField:"Paikan nimi eli luokka",
+    clsPlaceholder:"esim. postilaatikko",
+    clsHint:"Odota, että tarkkuus on alle 20 m.",
+    clsRec:"Tallenna paikka",
+    regHead:"Regressio · kerää kävely",
+    regBody:"Seiso siinä, mistä aloitat. Käynnistä tallennus, kävele suoraan poispäin noin kolme minuuttia ja pysäytä. Lähtöpiste asetetaan siihen kohtaan, jossa painat käynnistystä.",
+    regHint:"Kävele tasaista vauhtia äläkä pysähdy matkalla.",
+    regRec:"Aloita kävely", regCont:"Jatka kävelyä",
+    stop:"Pysäytä",
+    dataHead:"Kerätty data",
+    download:"Lataa CSV", copy:"Kopioi CSV", demo:"Lisää demodataa", clear:"Tyhjennä tämä laji",
+    demoWarn:"Mukana on demodataa. Mainitse se palautuksessa.",
+    emptyTable:"Ei vielä yhtään riviä tässä lajissa.",
+    needName:"Anna paikalle nimi ennen tallennusta.",
+    needFix:"Odota, että signaali löytyy.",
+    needData:"Ei vielä dataa vietäväksi.",
+    confirmCls:"Poistetaanko luokitteludata kokonaan?",
+    confirmReg:"Poistetaanko regressiodata kokonaan?",
+    sum1:"Mitä piirre ja kohde tarkoittavat",
+    sum2:"Vinkkejä keruuseen",
+    footer:"Sivu ei lähetä mitään verkkoon. Tiedostoihin tulee vain metrejä ja sekunteja suhteessa omaan lähtöpisteeseesi – ei koordinaatteja. Data katoaa, kun tyhjennät sen.",
+    body1:'<p>Koneoppimisen aineisto on taulukko. Yksi rivi on yksi <strong>havainto</strong>: yksi mittaus, jonka puhelin teki.</p>'+
+      '<p><strong>Piirteet</strong> (features) ovat sarakkeet, jotka malli saa nähdä. Ne ovat mallin syöte.</p>'+
+      '<p><strong>Kohde</strong> (target) on se yksi sarake, jonka malli yrittää ennustaa piirteiden perusteella. Tässä työkalussa kohde on aina <strong>viimeinen sarake</strong>.</p>'+
+      '<p>Jos kohde on nimi, tehtävä on <strong>luokittelu</strong>. Jos kohde on luku, tehtävä on <strong>regressio</strong>. Se on koko ero.</p>'+
+      '<p>Sarakenimet ovat aina englanniksi, jotta sama analyysikoodi toimii kielestä riippumatta.</p>',
+    body2:'<ol>'+
+      '<li>Kerää ulkona. Sisällä GPS heittää helposti yli 30 metriä.</li>'+
+      '<li><strong>Pidä näyttö auki</strong> tallennuksen aikana. Lukossa oleva puhelin lopettaa mittaamisen.</li>'+
+      '<li>Älä katso puhelinta kävellessäsi. Sivu tallentaa itsekseen.</li>'+
+      '<li>Voit kerätä molemmat lajit samalla lenkillä. Ne tallentuvat erikseen ja ladataan omina tiedostoinaan.</li>'+
+      '<li>Sivu muistaa keräämäsi rivit, vaikka se ladattaisiin uudelleen.</li></ol>'+
+      '<p><strong>altitude_m</strong> jää monella puhelimella tyhjäksi – kaikki laitteet eivät ilmoita korkeutta. Tyhjä ruutu ei ole vika: se on puuttuva arvo, ja sarakkeen voi jättää analyysissa pois.</p>'+
+      '<p>Jos et pääse ulos, paina <strong>Lisää demodataa</strong>. Se tuottaa saman muotoisen aineiston, jolla tehtävän voi tehdä loppuun.</p>'
+   },
+   en:{
+    sub:"Collect your own machine learning training data with your phone. Choose which kind you are collecting.",
+    signal:"Signal", acc:"Accuracy", rows:"Rows", time:"Time", dist:"Distance",
+    fixSearch:"searching…", fixOk:"ok", fixBlocked:"blocked", fixNone:"no fix", fixNoSupport:"unsupported",
+    feature:"feature", target:"target",
+    clsTab:"Classification", clsTabSub:"target is a name",
+    regTab:"Regression", regTabSub:"target is a number",
+    clsHead:"Classification · collect named places",
+    clsBody:"Pick 3–4 places 20–60 metres apart. Name the place, stand still and keep recording for about 20 seconds. Repeat at every place.",
+    clsField:"Place name, i.e. the class",
+    clsPlaceholder:"e.g. mailbox",
+    clsHint:"Wait until accuracy is below 20 m.",
+    clsRec:"Record place",
+    regHead:"Regression · collect a walk",
+    regBody:"Stand where you start. Begin recording, walk straight away from that spot for about three minutes, then stop. The starting point is set where you press start.",
+    regHint:"Walk at a steady pace and don't stop on the way.",
+    regRec:"Start walk", regCont:"Continue walk",
+    stop:"Stop",
+    dataHead:"Collected data",
+    download:"Download CSV", copy:"Copy CSV", demo:"Add demo data", clear:"Clear this dataset",
+    demoWarn:"This dataset contains demo rows. Say so when you submit it.",
+    emptyTable:"No rows in this dataset yet.",
+    needName:"Name the place before recording.",
+    needFix:"Wait for a location fix.",
+    needData:"Nothing to export yet.",
+    confirmCls:"Delete the whole classification dataset?",
+    confirmReg:"Delete the whole regression dataset?",
+    sum1:"What features and targets are",
+    sum2:"Collection tips",
+    footer:"This page sends nothing anywhere. Files contain only metres and seconds relative to your own starting point – no coordinates. The data is gone once you clear it.",
+    body1:'<p>A machine learning dataset is a table. One row is one <strong>observation</strong>: one measurement your phone made.</p>'+
+      '<p><strong>Features</strong> are the columns the model gets to see. They are its input.</p>'+
+      '<p>The <strong>target</strong> is the single column the model tries to predict from the features. In this tool the target is always the <strong>last column</strong>.</p>'+
+      '<p>If the target is a name, the task is <strong>classification</strong>. If the target is a number, the task is <strong>regression</strong>. That is the whole difference.</p>'+
+      '<p>Column names are always in English so the same analysis code works in either language.</p>',
+    body2:'<ol>'+
+      '<li>Collect outdoors. Indoors the GPS error easily exceeds 30 metres.</li>'+
+      '<li><strong>Keep the screen on</strong> while recording. A locked phone stops the measurements.</li>'+
+      '<li>Don\'t look at the phone while walking. The page records by itself.</li>'+
+      '<li>You can collect both kinds on the same trip. They are stored separately and downloaded as separate files.</li>'+
+      '<li>The page remembers your rows even if it is reloaded.</li></ol>'+
+      '<p><strong>altitude_m</strong> stays empty on many phones – not every device reports altitude. An empty cell is not a bug: it is a missing value, and you can simply leave that column out of the analysis.</p>'+
+      '<p>If you can\'t get outside, press <strong>Add demo data</strong>. It produces a dataset in the same shape so you can finish the assignment.</p>'
+   }
+  };
+  var lang="fi";
+  function t(k){return T[lang][k]}
+
+  /* ================= tila / state ================= */
   var st={
-    mode:"luok",
-    luok:{rows:[],origin:null},
-    regr:{rows:[],origin:null,t0:null},
-    rec:null, timer:null, last:null, wake:null
+    mode:"cls",
+    cls:{rows:[],origin:null},
+    reg:{rows:[],origin:null,t0:null},
+    rec:null, timer:null, last:null, wake:null, fix:"fixSearch"
   };
 
-  /* ---------- tallennus selaimeen ---------- */
-  function save(){try{localStorage.setItem(KEY,JSON.stringify({luok:st.luok,regr:st.regr}))}catch(e){}}
+  var SCHEMA={
+    cls:{file:"classification.csv",
+         cols:["x_m","y_m","accuracy_m","altitude_m","label"],
+         vals:function(r){return [r.x,r.y,r.acc,r.alt,r.label]}},
+    reg:{file:"regression.csv",
+         cols:["time_s","accuracy_m","altitude_m","distance_m"],
+         vals:function(r){return [r.t,r.acc,r.alt,r.d]}}
+  };
+
+  function save(){try{localStorage.setItem(KEY,JSON.stringify({cls:st.cls,reg:st.reg}))}catch(e){}}
   function load(){try{
     var d=JSON.parse(localStorage.getItem(KEY)||"null");
-    if(d&&d.luok){st.luok=d.luok;st.regr=d.regr}
+    if(d&&d.cls){st.cls=d.cls;st.reg=d.reg}
+    var l=localStorage.getItem(LKEY); if(l==="en"||l==="fi")lang=l;
   }catch(e){}}
 
-  /* ---------- apurit ---------- */
-  function r1(v){return Math.round(v*10)/10}
-  function metrit(o,c){
-    return [ (c.longitude-o.lon)*111320*Math.cos(o.lat*Math.PI/180),
-             (c.latitude-o.lat)*110540 ];
+  /* ================= apurit / helpers ================= */
+  function r1(v){return v==null||isNaN(v)?null:Math.round(v*10)/10}
+  function metres(o,c){
+    return [(c.longitude-o.lon)*111320*Math.cos(o.lat*Math.PI/180),(c.latitude-o.lat)*110540];
   }
-  function setFix(t,s){$("v-fix").textContent=t;$("c-fix").className="cell s-"+s}
+  function setFix(key,s){st.fix=key;$("v-fix").textContent=t(key);$("c-fix").className="cell s-"+s}
   function flash(id,msg){
     var h=$(id),old=h.textContent;
     h.textContent=msg;h.style.color="var(--bad)";
     setTimeout(function(){h.textContent=old;h.style.color=""},2600);
   }
 
-  /* ---------- paikannus ---------- */
-  if(!navigator.geolocation){setFix("ei tukea","bad")}
+  /* ================= paikannus / geolocation ================= */
+  if(!navigator.geolocation){setFix("fixNoSupport","bad")}
   else{
-    setFix("etsii…","warn");
+    setFix("fixSearch","warn");
     navigator.geolocation.watchPosition(function(p){
-      st.last=p;
-      setFix("ok","ok");
+      st.last=p;setFix("fixOk","ok");
       var a=p.coords.accuracy;
       $("v-acc").innerHTML=Math.round(a)+' <span class="u">m</span>';
       $("c-acc").className="cell "+(a<=15?"s-ok":a<=35?"s-warn":"s-bad");
-    },function(err){
-      setFix(err.code===1?"estetty":"ei löydy","bad");
-    },{enableHighAccuracy:true,maximumAge:1000,timeout:20000});
+    },function(err){setFix(err.code===1?"fixBlocked":"fixNone","bad")},
+     {enableHighAccuracy:true,maximumAge:1000,timeout:20000});
   }
 
-  /* ---------- rivin tallennus ---------- */
+  /* ================= rivien keruu / sampling ================= */
   function sample(){
     var p=st.last;if(!p)return;
-    var c=p.coords;
-    if(st.rec==="luok"){
-      if(!st.luok.origin)st.luok.origin={lat:c.latitude,lon:c.longitude};
-      var m=metrit(st.luok.origin,c);
-      st.luok.rows.push({x:r1(m[0]),y:r1(m[1]),acc:r1(c.accuracy),
-                         luokka:$("luokka").value.trim(),src:"gps"});
+    var c=p.coords, alt=r1(c.altitude);
+    if(st.rec==="cls"){
+      if(!st.cls.origin)st.cls.origin={lat:c.latitude,lon:c.longitude};
+      var m=metres(st.cls.origin,c);
+      st.cls.rows.push({x:r1(m[0]),y:r1(m[1]),acc:r1(c.accuracy),alt:alt,
+                        label:$("luokka").value.trim(),src:"gps"});
     }else{
-      if(!st.regr.origin){st.regr.origin={lat:c.latitude,lon:c.longitude};st.regr.t0=Date.now()}
-      var q=metrit(st.regr.origin,c);
-      st.regr.rows.push({t:r1((Date.now()-st.regr.t0)/1000),acc:r1(c.accuracy),
-                         d:r1(Math.sqrt(q[0]*q[0]+q[1]*q[1])),src:"gps"});
+      if(!st.reg.origin){st.reg.origin={lat:c.latitude,lon:c.longitude};st.reg.t0=Date.now()}
+      var q=metres(st.reg.origin,c);
+      st.reg.rows.push({t:r1((Date.now()-st.reg.t0)/1000),acc:r1(c.accuracy),alt:alt,
+                        d:r1(Math.sqrt(q[0]*q[0]+q[1]*q[1])),src:"gps"});
     }
     save();render();
   }
 
   function start(mode){
-    if(mode==="luok"&&!$("luokka").value.trim()){
-      $("luokka").focus();flash("hint-luok","Anna paikalle nimi ennen tallennusta.");return;
-    }
-    if(!st.last){flash(mode==="luok"?"hint-luok":"hint-regr","Odota, että signaali löytyy.");return}
+    if(mode==="cls"&&!$("luokka").value.trim()){$("luokka").focus();flash("hint-luok",t("needName"));return}
+    if(!st.last){flash(mode==="cls"?"hint-luok":"hint-regr",t("needFix"));return}
     st.rec=mode;
-    var b=$(mode==="luok"?"b-luok":"b-regr");
+    var b=$(mode==="cls"?"b-luok":"b-regr");
     b.classList.add("on","live");
-    b.innerHTML='<span class="dot"></span>Pysäytä';
-    st.timer=setInterval(sample,mode==="luok"?1000:2000);
+    b.innerHTML='<span class="dot"></span>'+t("stop");
+    st.timer=setInterval(sample,mode==="cls"?1000:2000);
     sample();
     if(navigator.wakeLock&&navigator.wakeLock.request)
       navigator.wakeLock.request("screen").then(function(w){st.wake=w}).catch(function(){});
@@ -338,110 +414,131 @@ omaan lähtöpisteeseesi – ei koordinaatteja. Data katoaa, kun tyhjennät sen.
   function stop(){
     if(st.timer){clearInterval(st.timer);st.timer=null}
     st.rec=null;
-    var a=$("b-luok"),b=$("b-regr");
-    a.classList.remove("on","live");a.textContent="Tallenna paikka";
-    b.classList.remove("on","live");b.textContent=st.regr.rows.length?"Jatka kävelyä":"Aloita kävely";
+    $("b-luok").classList.remove("on","live");
+    $("b-regr").classList.remove("on","live");
     if(st.wake){try{st.wake.release()}catch(e){}st.wake=null}
+    render();
   }
 
-  /* ---------- CSV ---------- */
-  var SKEEMA={
-    luok:{tiedosto:"luokittelu.csv",
-          sarakkeet:["x_m","y_m","tarkkuus_m","luokka"],
-          arvot:function(r){return [r.x,r.y,r.acc,r.luokka]}},
-    regr:{tiedosto:"regressio.csv",
-          sarakkeet:["aika_s","tarkkuus_m","etaisyys_m"],
-          arvot:function(r){return [r.t,r.acc,r.d]}}
-  };
-  function rivit(){return st[st.mode].rows}
+  /* ================= CSV ================= */
+  function rows(){return st[st.mode].rows}
   function csv(){
-    var s=SKEEMA[st.mode];
-    return s.sarakkeet.join(",")+"\n"+rivit().map(function(r){return s.arvot(r).join(",")}).join("\n")+"\n";
+    var s=SCHEMA[st.mode];
+    return s.cols.join(",")+"\n"+rows().map(function(r){
+      return s.vals(r).map(function(v){return v==null?"":v}).join(",")}).join("\n")+"\n";
   }
 
-  /* ---------- näkymä ---------- */
-  function render(){
-    var s=SKEEMA[st.mode], rows=rivit();
-    $("v-n").textContent=rows.length;
+  /* ================= näkymä / view ================= */
+  function roolit(el,s){
+    el.innerHTML=s.cols.map(function(c,i){
+      var last=i===s.cols.length-1;
+      return '<span class="'+(last?"k":"p")+'">'+c+" <em>"+t(last?"target":"feature")+"</em></span>";
+    }).join("");
+  }
 
-    // luokittelun laskurit
+  function render(){
+    var s=SCHEMA[st.mode], rs=rows();
+    $("v-n").textContent=rs.length;
+
     var counts={};
-    st.luok.rows.forEach(function(r){if(r.luokka)counts[r.luokka]=(counts[r.luokka]||0)+1});
-    var t=$("tags");t.innerHTML="";
+    st.cls.rows.forEach(function(r){if(r.label)counts[r.label]=(counts[r.label]||0)+1});
+    var tg=$("tags");tg.innerHTML="";
     Object.keys(counts).forEach(function(k){
       var el=document.createElement("span");el.className="tag";
-      el.innerHTML=k+" <b>"+counts[k]+"</b>";t.appendChild(el);
+      el.innerHTML=k+" <b>"+counts[k]+"</b>";tg.appendChild(el);
     });
 
-    // regression mittarit
-    var rr=st.regr.rows, viim=rr[rr.length-1];
+    var rr=st.reg.rows, viim=rr[rr.length-1];
     $("v-aika").innerHTML=(viim?Math.round(viim.t):0)+' <span class="u">s</span>';
     $("v-et").innerHTML=(viim?Math.round(viim.d):0)+' <span class="u">m</span>';
     $("v-nr").textContent=rr.length;
-    if(st.rec!=="regr")$("b-regr").textContent=rr.length?"Jatka kävelyä":"Aloita kävely";
 
-    // esikatselutaulukko
+    if(st.rec!=="cls")$("b-luok").textContent=t("clsRec");
+    if(st.rec!=="regr"&&st.rec!=="reg")$("b-regr").textContent=rr.length?t("regCont"):t("regRec");
+
     var box=$("preview");
-    if(!rows.length){
-      box.innerHTML='<div class="empty">Ei vielä yhtään riviä tässä lajissa.</div>';
+    if(!rs.length){
+      box.innerHTML='<div class="empty">'+t("emptyTable")+"</div>";
     }else{
       var h="<tr>";
-      s.sarakkeet.forEach(function(c,i){
-        var last=i===s.sarakkeet.length-1;
-        h+='<th class="'+(last?"kohde ":"")+(c==="luokka"?"txt":"")+'">'+c+
-           "<small>"+(last?"kohde":"piirre")+"</small></th>";
+      s.cols.forEach(function(c,i){
+        var last=i===s.cols.length-1;
+        h+='<th class="'+(last?"kohde ":"")+(c==="label"?"txt":"")+'">'+c+
+           "<small>"+t(last?"target":"feature")+"</small></th>";
       });
       h+="</tr>";
-      var body=rows.slice(-6).map(function(r){
-        var a=s.arvot(r),tr="<tr>";
+      var body=rs.slice(-6).map(function(r){
+        var a=s.vals(r),tr="<tr>";
         a.forEach(function(v,i){
-          var last=i===a.length-1;
-          tr+='<td class="'+(last?"kohde ":"")+(typeof v==="string"?"txt":"")+'">'+v+"</td>";
+          var last=i===a.length-1, tyhja=v==null||v==="";
+          tr+='<td class="'+(last?"kohde ":"")+(typeof v==="string"?"txt ":"")+(tyhja?"tyhja":"")+'">'+
+              (tyhja?"–":v)+"</td>";
         });
         return tr+"</tr>";
       }).join("");
       box.innerHTML="<table><thead>"+h+"</thead><tbody>"+body+"</tbody></table>";
     }
 
-    $("demobadge").className="warnbox"+(rows.some(function(r){return r.src==="demo"})?" show":"");
+    $("demobadge").className="warnbox"+(rs.some(function(r){return r.src==="demo"})?" show":"");
+  }
+
+  function applyLang(){
+    document.documentElement.lang=lang;
+    $("fi").setAttribute("aria-pressed",lang==="fi");
+    $("en").setAttribute("aria-pressed",lang==="en");
+    var els=document.querySelectorAll("[data-t]");
+    for(var i=0;i<els.length;i++)els[i].textContent=t(els[i].getAttribute("data-t"));
+    var ph=document.querySelectorAll("[data-tp]");
+    for(i=0;i<ph.length;i++)ph[i].placeholder=t(ph[i].getAttribute("data-tp"));
+    $("body1").innerHTML=t("body1");
+    $("body2").innerHTML=t("body2");
+    $("v-fix").textContent=t(st.fix);
+    roolit($("rooli-luok"),SCHEMA.cls);
+    roolit($("rooli-regr"),SCHEMA.reg);
+    if(st.rec)$(st.rec==="cls"?"b-luok":"b-regr").innerHTML='<span class="dot"></span>'+t("stop");
+    render();
+    try{localStorage.setItem(LKEY,lang)}catch(e){}
   }
 
   function vaihda(mode){
     if(st.rec)stop();
     st.mode=mode;
-    $("tab-luok").setAttribute("aria-selected",mode==="luok");
-    $("tab-regr").setAttribute("aria-selected",mode==="regr");
-    $("p-luok").hidden=mode!=="luok";
-    $("p-regr").hidden=mode!=="regr";
+    $("tab-luok").setAttribute("aria-selected",mode==="cls");
+    $("tab-regr").setAttribute("aria-selected",mode==="reg");
+    $("p-luok").hidden=mode!=="cls";
+    $("p-regr").hidden=mode!=="reg";
     render();
   }
 
-  /* ---------- demodata ---------- */
+  /* ================= demodata / demo data ================= */
   function demo(){
-    if(st.mode==="luok"){
-      var nimet=["postilaatikko","penkki","portaat","pysäkki"],
+    if(st.mode==="cls"){
+      var names=lang==="fi"?["postilaatikko","penkki","portaat","pysäkki"]
+                           :["mailbox","bench","steps","bus stop"],
           pos=[[0,0],[34,20],[56,-26],[18,-52]];
-      nimet.forEach(function(nimi,i){
-        var haj=8+Math.random()*4;
+      names.forEach(function(nimi,i){
+        var haj=8+Math.random()*4, korkeus=112+i*1.5;
         for(var j=0;j<24;j++){
-          st.luok.rows.push({
+          st.cls.rows.push({
             x:r1(pos[i][0]+(Math.random()+Math.random()-1)*haj*1.7),
             y:r1(pos[i][1]+(Math.random()+Math.random()-1)*haj*1.7),
-            acc:r1(4+Math.random()*20),luokka:nimi,src:"demo"});
+            acc:r1(4+Math.random()*20), alt:r1(korkeus+(Math.random()-0.5)*4),
+            label:nimi,src:"demo"});
         }
       });
     }else{
       var v=1.15+Math.random()*0.4;
       for(var k=0;k<90;k++){
         var d=v*2*k*(0.94+Math.random()*0.12);
-        st.regr.rows.push({t:r1(2*k),acc:r1(4+Math.random()*18),
-                           d:r1(Math.max(0,d+(Math.random()-0.5)*6)),src:"demo"});
+        st.reg.rows.push({t:r1(2*k), acc:r1(4+Math.random()*18),
+                          alt:r1(112+k*0.05+(Math.random()-0.5)*4),
+                          d:r1(Math.max(0,d+(Math.random()-0.5)*6)),src:"demo"});
       }
     }
     save();render();
   }
 
-  /* ---------- vienti ---------- */
+  /* ================= vienti / export ================= */
   function lataa(txt,nimi){
     var a=document.createElement("a");
     a.href=URL.createObjectURL(new Blob([txt],{type:"text/csv;charset=utf-8"}));
@@ -449,23 +546,24 @@ omaan lähtöpisteeseesi – ei koordinaatteja. Data katoaa, kun tyhjennät sen.
     setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
   }
 
-  /* ---------- tapahtumat ---------- */
-  $("tab-luok").onclick=function(){vaihda("luok")};
-  $("tab-regr").onclick=function(){vaihda("regr")};
-  $("b-luok").onclick=function(){st.rec==="luok"?stop():start("luok")};
-  $("b-regr").onclick=function(){st.rec==="regr"?stop():start("regr")};
+  /* ================= tapahtumat / events ================= */
+  $("fi").onclick=function(){lang="fi";applyLang()};
+  $("en").onclick=function(){lang="en";applyLang()};
+  $("tab-luok").onclick=function(){vaihda("cls")};
+  $("tab-regr").onclick=function(){vaihda("reg")};
+  $("b-luok").onclick=function(){st.rec==="cls"?stop():start("cls")};
+  $("b-regr").onclick=function(){st.rec==="reg"?stop():start("reg")};
   $("demo").onclick=demo;
   $("reset").onclick=function(){
-    var nimi=st.mode==="luok"?"luokitteludata":"regressiodata";
-    if(!confirm("Poistetaanko "+nimi+" kokonaan?"))return;
+    if(!confirm(t(st.mode==="cls"?"confirmCls":"confirmReg")))return;
     if(st.rec)stop();
-    if(st.mode==="luok")st.luok={rows:[],origin:null};
-    else st.regr={rows:[],origin:null,t0:null};
+    if(st.mode==="cls")st.cls={rows:[],origin:null};
+    else st.reg={rows:[],origin:null,t0:null};
     save();render();$("ta").className="";
   };
   $("dl").onclick=function(){
-    if(!rivit().length){flash(st.mode==="luok"?"hint-luok":"hint-regr","Ei vielä dataa vietäväksi.");return}
-    var txt=csv(),nimi=SKEEMA[st.mode].tiedosto;
+    if(!rows().length){flash(st.mode==="cls"?"hint-luok":"hint-regr",t("needData"));return}
+    var txt=csv(), nimi=SCHEMA[st.mode].file;
     if(window.claude&&typeof window.claude.use==="function"){
       window.claude.use("downloads").then(function(ns){
         if(!ns){lataa(txt,nimi);return}
@@ -474,7 +572,7 @@ omaan lähtöpisteeseesi – ei koordinaatteja. Data katoaa, kun tyhjennät sen.
     }else lataa(txt,nimi);
   };
   $("copy").onclick=function(){
-    if(!rivit().length)return;
+    if(!rows().length)return;
     var txt=csv(),ta=$("ta");ta.value=txt;ta.className="show";
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).catch(function(){});
     else ta.select();
@@ -484,7 +582,7 @@ omaan lähtöpisteeseesi – ei koordinaatteja. Data katoaa, kun tyhjennät sen.
       navigator.wakeLock.request("screen").then(function(w){st.wake=w}).catch(function(){});
   });
 
-  load();vaihda("luok");
+  load();applyLang();vaihda("cls");
 })();
 </script>
 </body>
